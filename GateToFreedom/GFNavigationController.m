@@ -1,5 +1,6 @@
 #import "GFNavigationController.h"
 #import "GFPage.h"
+#import "GFSection.h"
 #import <Tweak.h>
 
 @implementation GFNavigationController
@@ -10,7 +11,10 @@ static NSArray<NSString *> *pageClasses;
     if (self == GFNavigationController.class) {
         pageClasses = @[
             @"GFWelcomePage",
-            @"GFRootPasswordPage"
+            @"GFPasswordWelcomePage",
+            @"GFRootPasswordPage",
+            @"GFMobilePasswordPage",
+            @"GFCompletionPage"
         ];
     }
 }
@@ -45,28 +49,61 @@ static NSArray<NSString *> *pageClasses;
     return nil;
 }
 
-- (void)pushNextPage {
-    if (self.viewControllers.count < pages.count) {   
-        [self pushViewController:pages[self.viewControllers.count] animated:YES];
-    }
-    else {
-        setupCompleted = YES;
-        [self dismissViewControllerAnimated:YES completion:nil];
-    }
+- (void)viewDidAppear:(BOOL)animated {
+    [super viewDidAppear:animated];
+    showAlertOnDisappear = YES;
 }
 
 - (void)viewDidDisappear:(BOOL)animated {
-    NSLog(@"View did disappear");
-    if (!setupCompleted) {
+    [super viewDidDisappear:animated];
+    if (showAlertOnDisappear) {
         UIAlertView *alertView = [[UIAlertView alloc]
             initWithTitle:@"Warning"
-            message:@"The setup wasn't completed. It will be restarted after a respring."
+            message:@"The setup couldn't be completed. It will be restarted after a respring."
             delegate:nil
             cancelButtonTitle:@"OK"
             otherButtonTitles:nil
         ];
         [alertView show];
     }
+}
+
+- (NSInteger)currentIndex {
+    return [pages indexOfObjectIdenticalTo:self.visibleViewController];
+}
+
+- (void)abortSetupWithAlert:(BOOL)showAlert {
+    showAlertOnDisappear = showAlert;
+    [self dismissViewControllerAnimated:YES completion:nil];
+}
+
+- (void)completeSetup {
+    showAlertOnDisappear = NO;
+    [self dismissViewControllerAnimated:YES completion:nil];
+}
+
+- (void)pushPageAtIndex:(NSInteger)index {
+    if (index < pages.count) {
+        [self pushViewController:pages[index] animated:YES];
+    }
+    else {
+        [self completeSetup];
+    }
+}
+
+- (void)pushNextPage {
+    [self pushPageAtIndex:self.currentIndex+1];
+}
+
+- (void)skipToNextSection {
+    NSInteger nextViewControllerIndex = self.currentIndex;
+    while (++nextViewControllerIndex < pages.count) {
+        if ([pages[nextViewControllerIndex] isKindOfClass:[GFSection class]]) {
+            [self pushPageAtIndex:nextViewControllerIndex];
+            return;
+        }
+    }
+    [self completeSetup];
 }
 
 - (void)dealloc {
