@@ -44,22 +44,75 @@ static NSString *GFGetHelperPath(void) {
 	return [GFGetBundle() pathForResource:@"setuphelper" ofType:nil];
 }
 
-NSString *GFChangeAccountPassword(NSString *accountName, NSString *newPassword) {
+#define HelperErrorDomain @"com.pixelomer.gatetofreedom.HelperError"
+NSError *GFChangeAccountPassword(NSString *accountName, NSString *newPassword) {
 	NSString *helperPath = GFGetHelperPath();
 	NSLog(@"Helper: %@", helperPath);
-	if (!helperPath) return LC(@"CANNOT_ACCESS_HELPER");
+	if (!helperPath) {
+		return [NSError
+			errorWithDomain:HelperErrorDomain
+			code:-1
+			userInfo:@{
+				NSLocalizedDescriptionKey : LC(@"HELPER_CANNOT_BE_FOUND")
+			}
+		];
+	}
+	if (![newPassword canBeConvertedToEncoding:NSASCIIStringEncoding]) {
+		return [NSError
+			errorWithDomain:@"com.pixelomer.gatetofreedom.InvalidPasswordError"
+			code:-3
+			userInfo:@{
+				NSLocalizedDescriptionKey : LC(@"ASCII_CHARACTERS_ONLY_MESSAGE")
+			}
+		];
+	}
 	// This API is both private and deprecated. However, it works, so we are using it.
-	NSTask *task = [NSTask
-		launchedTaskWithLaunchPath:helperPath
-		arguments:@[ @"-c", accountName, newPassword ]
-	];
+	NSPipe *inputPipe = [NSPipe pipe];
+	NSTask *task = [NSTask new];
+	task.executableURL = [NSURL fileURLWithPath:helperPath];
+	task.arguments = @[ @"-c", accountName ];
+	task.standardInput = inputPipe;
+	[task launch];
+	NSFileHandle *fileHandle = inputPipe.fileHandleForWriting;
+	[fileHandle writeData:[newPassword dataUsingEncoding:NSASCIIStringEncoding]];
+	[fileHandle closeFile];
 	[task waitUntilExit];
-	return task.terminationStatus ? [GFGetBundle() localizedStringForKey:[NSString stringWithFormat:@"HELPER_ERROR_%i", task.terminationStatus] value:LC(@"UNKNOWN_ERROR") table:nil] : nil;
+	if (!task) {
+		return [NSError
+			errorWithDomain:HelperErrorDomain
+			code:-2
+			userInfo:@{
+				NSLocalizedDescriptionKey : [GFGetBundle()
+					localizedStringForKey:LC(@"HELPER_COULDNT_BE_LAUNCHED")
+					value:nil
+					table:nil
+				]
+			}
+		];
+	}
+	else if (task.terminationStatus) {
+		return [NSError
+			errorWithDomain:HelperErrorDomain
+			code:task.terminationStatus
+			userInfo:@{
+				NSLocalizedDescriptionKey : [GFGetBundle()
+					localizedStringForKey:[NSString stringWithFormat:@"HELPER_ERROR_%i", task.terminationStatus]
+					value:[NSString stringWithFormat:@"%@ (%i)",
+						LC(@"UNKNOWN_ERROR"),
+						task.terminationStatus
+					]
+					table:nil
+				]
+			}
+		];
+	}
+	else return nil;
 }
 
 void GFDeleteHelper(void) {
 	NSString *helperPath = GFGetHelperPath();
 	if (!helperPath) return;
+	// This API is both private and deprecated. However, it works, so we are using it.
 	[NSTask
 		launchedTaskWithLaunchPath:helperPath
 		arguments:@[ @"-d" ]
@@ -127,7 +180,7 @@ void GFDisableHooks(void) {
 
 - (void)singlePress:(id)arg1 {
 	if (springboard.isLocked) %orig;
-	else {
+	else if (!setupController.isOnLastStep) {
 		GFAlertController *alert = [GFAlertController
 			alertControllerWithTitle:LC(@"ABORT_SETUP")
 			message:LC(@"ABORT_SETUP_MESSAGE")

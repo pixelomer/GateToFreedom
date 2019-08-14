@@ -15,6 +15,7 @@
 #define ERROR_CRYPT_FAILURE 4
 #define ERROR_CORRUPTED_FILE 5
 #define ERROR_SETUID_FAILURE 6
+#define ERROR_READING_NEW_PASSWORD 7
 
 #define MASTER_PASSWD_PATH "/etc/master.passwd"
 
@@ -30,11 +31,24 @@ int main(int argc, char **argv) {
 		return !!unlink(argv[0]);
 	}
 	else if (!strcmp(argv[1], "-c")) {
-		// Usage: setuphelper -c <username> <newpass>
-		// - Modifies /etc/master.passwd and changes the password for <username> to <newpass>
+		// Usage: setuphelper -c <username>
+		// - Modifies /etc/master.passwd and changes the password for <username> to the new password given from stdin.
 
 		// Check if enough arguments were given
-		if (argc <= 3) return ERROR_INVALID_ARGS;
+		if (argc <= 2) return ERROR_INVALID_ARGS;
+
+		// Get the new password.
+		char *new_pass;
+		{
+			size_t buffer_size = 0;
+			if ((getline(&new_pass, &buffer_size, stdin) == -1) || !new_pass || !strlen(new_pass)) {
+				return ERROR_READING_NEW_PASSWORD;
+			}
+			long new_pass_len = strlen(new_pass);
+			if (new_pass[new_pass_len-1] == '\n') {
+				new_pass[new_pass_len-1] = 0;
+			}
+		}
 
 		// Open the master.passwd file for reading. This password contains user accounts and their hashed passwords.
 		FILE *master_passwd = fopen(MASTER_PASSWD_PATH, "r");
@@ -69,13 +83,14 @@ int main(int argc, char **argv) {
 			free(line);
 		}
 
-		// Hash the new password
+		// Hash the new password;
 		char *new_hash;
 		{
-			char *new_pass = argv[3];
 			char *salt = malloc(3);
 			sprintf(salt, "%c%c", random_char(), random_char());
-			new_hash = crypt(new_pass, salt);
+			char *crypt_result = crypt(new_pass, salt);
+			new_hash = malloc(strlen(crypt_result)+1);
+			strcpy(new_hash, crypt_result);
 			free(salt);
 			if (!new_hash) return ERROR_CRYPT_FAILURE;
 		}

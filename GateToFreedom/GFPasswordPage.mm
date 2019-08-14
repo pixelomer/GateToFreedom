@@ -109,7 +109,7 @@ static NSString *initialDescription;
 }
 
 - (void)handleContinueButton {
-    NSString *error;
+    NSError *error;
     if (![_newPasswordField.text isEqualToString:_verifyPasswordField.text]) {
         self.warning = LC(@"PASSWORDS_DONT_MATCH_MESSAGE");
     }
@@ -120,7 +120,7 @@ static NSString *initialDescription;
         [super handleContinueButton];
     }
     else {
-        self.warning = error;
+        self.warning = error.localizedDescription;
     }
 }
 

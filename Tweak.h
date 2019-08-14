@@ -11,6 +11,6 @@
 void GFDisableHooks(void);
 NSBundle *GFGetBundle(void);
 void GFDeleteHelper(void);
-NSString *GFChangeAccountPassword(NSString *accountName, NSString *newPassword);
+NSError *GFChangeAccountPassword(NSString *accountName, NSString *newPassword);
 
 #endif
