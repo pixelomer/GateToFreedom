@@ -58,10 +58,10 @@ static NSArray<NSString *> *pageClasses;
     [super viewDidDisappear:animated];
     if (showAlertOnDisappear) {
         UIAlertView *alertView = [[UIAlertView alloc]
-            initWithTitle:@"Warning"
-            message:@"The setup couldn't be completed. It will be restarted after a respring."
+            initWithTitle:LC(@"WARNING")
+            message:LC(@"SETUP_FAILURE_MESSAGE")
             delegate:nil
-            cancelButtonTitle:@"OK"
+            cancelButtonTitle:LC(@"OK")
             otherButtonTitles:nil
         ];
         [alertView show];

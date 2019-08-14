@@ -16,20 +16,20 @@ static UIImage *headerIcon;
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.headerIconView.image = headerIcon;
-    self.titleLabel.text = @"Keep Your Device Secure";
-    self.descriptionLabel.text = @"Normally, every iOS device uses the same passwords for system accounts. People can remotely connect to your device with these passwords. The setup will help you change them.";
+    self.titleLabel.text = LC(@"PASSWORDS_WELCOME_TITLE");
+    self.descriptionLabel.text = LC(@"PASSWORDS_WELCOME_DESCRIPTION");
     self.showsSkipButton = YES;
-    [self.skipButton setTitle:@"Change Later" forState:UIControlStateNormal];
+    [self.skipButton setTitle:LC(@"PASSWORDS_WELCOME_SKIP") forState:UIControlStateNormal];
 }
 
 - (void)handleSkipButton {
     GFAlertController *alert = [GFAlertController
-        alertControllerWithTitle:@"Are you sure?"
-        message:@"Skipping this step will leave your device insecure. Anyone who is on the same network as you will be able to access your device."
+        alertControllerWithTitle:LC(@"ARE_YOU_SURE")
+        message:LC(@"PASSWORDS_SKIP_ALERT_MESSAGE")
         preferredStyle:UIAlertControllerStyleAlert
     ];
     [alert addAction:[UIAlertAction
-        actionWithTitle:@"Skip"
+        actionWithTitle:LC(@"SKIP")
         style:UIAlertActionStyleDefault
         handler:^(UIAlertAction *action){
             dispatch_async(dispatch_get_main_queue(), ^{
@@ -38,7 +38,7 @@ static UIImage *headerIcon;
         }
     ]];
     [alert addAction:[UIAlertAction
-        actionWithTitle:@"Cancel"
+        actionWithTitle:LC(@"CANCEL")
         style:UIAlertActionStyleCancel
         handler:nil
     ]];

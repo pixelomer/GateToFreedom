@@ -7,7 +7,7 @@ include $(THEOS)/makefiles/common.mk
 
 TWEAK_NAME = GateToFreedom
 GateToFreedom_FRAMEWORKS = AVFoundation
-GateToFreedom_FILES = Tweak.xm $(wildcard GateToFreedom/*.m)
+GateToFreedom_FILES = Tweak.xm $(wildcard GateToFreedom/*.mm)
 GateToFreedom_CFLAGS = -fobjc-arc -I. -include macros.h -Wno-deprecated-declarations
 
 include $(THEOS_MAKE_PATH)/tweak.mk

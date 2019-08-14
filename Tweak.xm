@@ -41,22 +41,20 @@ static void GFHookMessageEx(Class cls, SEL message, IMP hook, IMP *origPt) {
 }
 
 static NSString *GFGetHelperPath(void) {
-	return [GFBundle pathForResource:@"setuphelper" ofType:nil];
+	return [GFGetBundle() pathForResource:@"setuphelper" ofType:nil];
 }
 
-extern "C" {
-BOOL GFChangeAccountPassword(NSString *accountName, NSString *newPassword) {
+NSString *GFChangeAccountPassword(NSString *accountName, NSString *newPassword) {
 	NSString *helperPath = GFGetHelperPath();
 	NSLog(@"Helper: %@", helperPath);
-	if (!helperPath) return NO;
+	if (!helperPath) return LC(@"CANNOT_ACCESS_HELPER");
+	// This API is both private and deprecated. However, it works, so we are using it.
 	NSTask *task = [NSTask
 		launchedTaskWithLaunchPath:helperPath
 		arguments:@[ @"-c", accountName, newPassword ]
 	];
 	[task waitUntilExit];
-	BOOL success = (task ? !task.terminationStatus : NO);
-	NSLog(@"Password change %@.", success ? @"succeeded" : @"failed");
-	return success;
+	return task.terminationStatus ? [GFGetBundle() localizedStringForKey:[NSString stringWithFormat:@"HELPER_ERROR_%i", task.terminationStatus] value:LC(@"UNKNOWN_ERROR") table:nil] : nil;
 }
 
 void GFDeleteHelper(void) {
@@ -66,6 +64,10 @@ void GFDeleteHelper(void) {
 		launchedTaskWithLaunchPath:helperPath
 		arguments:@[ @"-d" ]
 	];
+}
+
+NSBundle *GFGetBundle(void) {
+	return (GFBundle ?: (GFBundle = [NSBundle bundleWithPath:@"/Library/Application Support/GateToFreedom"]));
 }
 
 void GFDisableHooks(void) {
@@ -81,7 +83,6 @@ void GFDisableHooks(void) {
 	classes = nil;
 	messages = nil;
 	originals = nil;
-}
 }
 
 %group Tweak
@@ -103,7 +104,7 @@ void GFDisableHooks(void) {
 			preferredStyle:UIAlertControllerStyleActionSheet
 		];
 		[alert addAction:[UIAlertAction
-			actionWithTitle:@"Start Over"
+			actionWithTitle:LC(@"Start Over")
 			style:UIAlertActionStyleDefault
 			handler:^(UIAlertAction *action){
 				dispatch_async(dispatch_get_main_queue(), ^{
@@ -112,7 +113,7 @@ void GFDisableHooks(void) {
 			}
 		]];
 		[alert addAction:[UIAlertAction
-			actionWithTitle:@"Cancel"
+			actionWithTitle:LC(@"Cancel")
 			style:UIAlertActionStyleCancel
 			handler:nil
 		]];
@@ -128,12 +129,12 @@ void GFDisableHooks(void) {
 	if (springboard.isLocked) %orig;
 	else {
 		GFAlertController *alert = [GFAlertController
-			alertControllerWithTitle:@"Abort Setup"
-			message:@"Are you sure you want to abort the setup? The setup will be restarted after a respring."
+			alertControllerWithTitle:LC(@"ABORT_SETUP")
+			message:LC(@"ABORT_SETUP_MESSAGE")
 			preferredStyle:(iPad ? UIAlertControllerStyleAlert : UIAlertControllerStyleActionSheet)
 		];
 		[alert addAction:[UIAlertAction
-			actionWithTitle:@"Abort"
+			actionWithTitle:LC(@"ABORT")
 			style:UIAlertActionStyleDestructive
 			handler:^(UIAlertAction *action){
 				dispatch_async(dispatch_get_main_queue(), ^{
@@ -142,7 +143,7 @@ void GFDisableHooks(void) {
 			}
 		]];
 		[alert addAction:[UIAlertAction
-			actionWithTitle:@"Cancel"
+			actionWithTitle:LC(@"Cancel")
 			style:UIAlertActionStyleCancel
 			handler:nil
 		]];
@@ -200,9 +201,8 @@ void GFDisableHooks(void) {
 	#if DEBUG
 	[NSUserDefaults.standardUserDefaults setBool:NO forKey:kSetupCompleted];
 	#endif
-	
-	GFBundle = [NSBundle bundleWithPath:@"/Library/Application Support/GateToFreedom"];
-	if (!GFBundle) {
+
+	if (!GFGetBundle()) {
 		[NSException raise:NSInternalInconsistencyException format:@"Setup failed to open the setup bundle."];
 	}
 	if ([NSUserDefaults.standardUserDefaults boolForKey:kSetupCompleted] || ![NSFileManager.defaultManager fileExistsAtPath:GFGetHelperPath()]) {

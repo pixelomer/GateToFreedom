@@ -1,3 +1,6 @@
+// You might be wondering: "Why is this written in C instead of Objective-C?"
+// I don't really have a logical answer. I just wanted to write it like this.
+
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <unistd.h>
@@ -10,10 +13,15 @@
 #define ERROR_IO_FAILURE 2
 #define ERROR_UNKNOWN_USER 3
 #define ERROR_CRYPT_FAILURE 4
+#define ERROR_CORRUPTED_FILE 5
+#define ERROR_SETUID_FAILURE 6
+
 #define MASTER_PASSWD_PATH "/etc/master.passwd"
 
 int main(int argc, char **argv) {
-	setuid(0);
+	if (setuid(0)) {
+		return ERROR_SETUID_FAILURE;
+	}
 	if (argc <= 1);
 	else if (!strcmp(argv[1], "-d")) {
 		// Usage: setuphelper -d
@@ -72,11 +80,14 @@ int main(int argc, char **argv) {
 			if (!new_hash) return ERROR_CRYPT_FAILURE;
 		}
 		
-		// Get the length of the old hash. Assumes the line has the correct format.
+		// Get the length of the old hash.
 		long old_hash_len = 0;
 		{
 			for (char *tmp = unmodified_line + prefix_len; *tmp != ':'; tmp++) {
 				old_hash_len++;
+				if (*tmp == 0x0) {
+					return ERROR_CORRUPTED_FILE;
+				}
 			}
 		}
 

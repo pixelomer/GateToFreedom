@@ -8,16 +8,9 @@
 @interface GFAlertController : UIAlertController
 @end
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 void GFDisableHooks(void);
+NSBundle *GFGetBundle(void);
 void GFDeleteHelper(void);
-BOOL GFChangeAccountPassword(NSString *accountName, NSString *newPassword);
-
-#ifdef __cplusplus
-}
-#endif
+NSString *GFChangeAccountPassword(NSString *accountName, NSString *newPassword);
 
 #endif

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -e
 
+chown 0:0 "/Library/Application Support/GateToFreedom/setuphelper"
 chmod 4755 "/Library/Application Support/GateToFreedom/setuphelper"
 exit 0

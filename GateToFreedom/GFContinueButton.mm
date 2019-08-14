@@ -8,7 +8,7 @@
     button.layer.masksToBounds = YES;
     button.layer.cornerRadius = 8.0;
     button.highlighted = NO;
-    [button setTitle:@"Continue" forState:UIControlStateNormal];
+    [button setTitle:LC(@"CONTINUE") forState:UIControlStateNormal];
     button.titleLabel.font = [UIFont systemFontOfSize:17.0 weight:UIFontWeightSemibold];
     [button setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
     return button;

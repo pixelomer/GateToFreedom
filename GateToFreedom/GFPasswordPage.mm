@@ -5,6 +5,7 @@
 
 static UIImage *lockImage;
 static UIColor *separatorColor;
+static NSString *initialDescription;
 
 + (void)load {
     if (self == [GFPasswordPage class]) {
@@ -52,11 +53,24 @@ static UIColor *separatorColor;
         };
         lockImage = [UIImage imageWithData:[NSData dataWithBytes:lockImageContents length:sizeof(lockImageContents)]];
         separatorColor = [UIColor colorWithRed:0.918 green:0.918 blue:0.925 alpha:1.0];
+        initialDescription = LC(@"TYPE_YOUR_NEW_PASSWORD");
     }
+}
+
+- (void)resetDescription {
+    self.descriptionLabel.text = initialDescription;
+    self.descriptionLabel.textColor = [UIColor blackColor];
+}
+
+- (void)viewDidDisappear:(BOOL)animated {
+    [super viewDidDisappear:animated];
+    [self resetDescription];
 }
 
 - (instancetype)init {
     if ((self = [super init])) {
+        [self resetDescription];
+
         _accountDescriptionLabel = [UILabel new];
         _accountDescriptionLabel.font = [UIFont systemFontOfSize:12.0];
         _accountDescriptionLabel.textColor = [UIColor lightGrayColor];
@@ -71,10 +85,10 @@ static UIColor *separatorColor;
         _lockImageView.translatesAutoresizingMaskIntoConstraints = NO;
 
         _newPasswordField = [UITextField new];
-        _newPasswordField.placeholder = @"New Password";
+        _newPasswordField.placeholder = LC(@"NEW_PASSWORD");
 
         _verifyPasswordField = [UITextField new];
-        _verifyPasswordField.placeholder = @"Retype Password";
+        _verifyPasswordField.placeholder = LC(@"RETYPE_PASSWORD");
     }
     return self;
 }
@@ -95,17 +109,18 @@ static UIColor *separatorColor;
 }
 
 - (void)handleContinueButton {
+    NSString *error;
     if (![_newPasswordField.text isEqualToString:_verifyPasswordField.text]) {
-        self.warning = @"Passwords don't match.";
+        self.warning = LC(@"PASSWORDS_DONT_MATCH_MESSAGE");
     }
     else if (!_newPasswordField.text.length) {
-        self.warning = @"Password cannot be empty.";
+        self.warning = LC(@"EMPTY_PASSWORD_MESSAGE");
     }
-    else if (GFChangeAccountPassword(_accountName, _newPasswordField.text)) {
+    else if (!(error = GFChangeAccountPassword(_accountName, _newPasswordField.text))) {
         [super handleContinueButton];
     }
     else {
-        self.warning = @"An unknown error occurred.";
+        self.warning = error;
     }
 }
 
@@ -151,8 +166,8 @@ static UIColor *separatorColor;
     }
 
     NSMutableArray<UILabel *> *labels = @[
-        (id)@"Password  ",
-        (id)@"Verify  "
+        (id)[NSString stringWithFormat:@"%@  ", LC(@"PASSWORD")],
+        (id)[NSString stringWithFormat:@"%@  ", LC(@"VERIFY")]
     ].mutableCopy;
     for (NSInteger i=0; i<labels.count; i++) {
         NSString *text = (id)labels[i];
@@ -177,8 +192,6 @@ static UIColor *separatorColor;
     ]];
 
     // Overcomplicated code ends here.
-    
-    self.descriptionLabel.text = @"Type your new password.";
 
     [self.view addSubview:_lockImageView];
     [_lockImageView.topAnchor constraintEqualToAnchor:separators[2].bottomAnchor constant:20.0].active =
@@ -194,7 +207,7 @@ static UIColor *separatorColor;
 }
 
 - (void)setAccountName:(NSString *)accountName {
-    self.titleLabel.text = [NSString stringWithFormat:@"%@ password", accountName.lowercaseString.capitalizedString];
+    self.titleLabel.text = [NSString stringWithFormat:LC(@"PASSWORD_TITLE_FORMAT"), accountName.lowercaseString.capitalizedString];
     _accountName = accountName;
 }
 

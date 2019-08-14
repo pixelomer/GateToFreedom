@@ -13,7 +13,7 @@
     welcomeLabel.translatesAutoresizingMaskIntoConstraints = NO;
     welcomeLabel.adjustsFontSizeToFitWidth = YES;
     welcomeLabel.textAlignment = NSTextAlignmentCenter;
-    welcomeLabel.text = [NSString stringWithFormat:@"Welcome to %@", [UIDevice.currentDevice.model componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceCharacterSet]].firstObject];
+    welcomeLabel.text = [NSString stringWithFormat:LC(@"WELCOME_TO_DEVICE"), [UIDevice.currentDevice.model componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceCharacterSet]].firstObject];
     [self.view addSubview:welcomeLabel];
     [welcomeLabel.leftAnchor constraintEqualToAnchor:self.view.readableContentGuide.leftAnchor].active =
     [welcomeLabel.rightAnchor constraintEqualToAnchor:self.view.readableContentGuide.rightAnchor].active =
@@ -23,7 +23,7 @@
     object_setClass(self.continueButton, [UIButton class]);
     [self.continueButton setTitleColor:self.continueButton.tintColor forState:UIControlStateNormal];
     self.continueButton.backgroundColor = [UIColor clearColor];
-    [self.continueButton setTitle:@"Get Started" forState:UIControlStateNormal];
+    [self.continueButton setTitle:LC(@"GET_STARTED") forState:UIControlStateNormal];
     self.continueButton.titleLabel.font = [UIFont systemFontOfSize:25.0];
 
     // A message to people who are going to steal this tweak

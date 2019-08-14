@@ -30,14 +30,14 @@
         _skipButton = [UIButton buttonWithType:UIButtonTypeSystem];
         _skipButton.titleLabel.font = [UIFont systemFontOfSize:15.0];
         _skipButton.translatesAutoresizingMaskIntoConstraints = NO;
-        [_skipButton setTitle:@"Skip" forState:UIControlStateNormal];
+        [_skipButton setTitle:LC(@"SKIP") forState:UIControlStateNormal];
         [_skipButton addTarget:self action:@selector(didPressSkipButton:) forControlEvents:UIControlEventTouchUpInside];
 
         _headerIconView = [UIImageView new];
         _headerIconView.translatesAutoresizingMaskIntoConstraints = NO;
 
         _nextButton = [[UIBarButtonItem alloc]
-            initWithTitle:@"Next"
+            initWithTitle:LC(@"NEXT")
             style:UIBarButtonItemStyleDone
             target:self
             action:@selector(didPressNextButton:)
@@ -112,7 +112,7 @@
         preferredStyle:UIAlertControllerStyleAlert
     ];
     [alert addAction:[UIAlertAction
-        actionWithTitle:@"OK"
+        actionWithTitle:LC(@"OK")
         style:UIAlertActionStyleCancel
         handler:nil
     ]];
