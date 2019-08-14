@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -e
+
+chmod 4755 "/Library/Application Support/GateToFreedom/setuphelper"
+exit 0

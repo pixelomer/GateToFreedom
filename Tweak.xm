@@ -1,6 +1,7 @@
 #import <UIKit/UIKit.h>
 #import <AVFoundation/AVFoundation.h>
 #import <substrate.h>
+#import <Private/NSTask.h>
 #import "Tweak.h"
 #import "GateToFreedom/GFNavigationController.h"
 
@@ -9,26 +10,62 @@
 - (UIGestureRecognizer *)screenshotGestureRecognizer;
 @end
 
+@interface SBIdleTimerProxy : NSObject
+- (void)reset;
+- (id)sourceTimer;
+@end
+
 @implementation GFAlertController
 - (BOOL)shouldAutorotate {
 	return NO;
 }
 @end
 
-static GFNavigationController * __unsafe_unretained setupController;
+static GFNavigationController * __weak setupController;
 static SpringBoard * __weak springboard;
 static NSPointerArray * __strong classes;
 static NSPointerArray * __strong messages;
 static NSPointerArray * __strong originals;
+static NSTimer * __strong preventAutolockTimer;
+static NSBundle * __strong GFBundle;
 static BOOL iPad;
+static BOOL didPresentSetupController;
 
 static void GFHookMessageEx(Class cls, SEL message, IMP hook, IMP *origPt) {
 	MSHookMessageEx(cls, message, hook, origPt);
 	if (origPt && *origPt) {
 		[classes addPointer:(__bridge void *)cls];
 		[messages addPointer:message];
-		[originals addPointer:*origPt];
+		[originals addPointer:(void *)*origPt];
 	}
+}
+
+static NSString *GFGetHelperPath(void) {
+	return [GFBundle pathForResource:@"setuphelper" ofType:nil];
+}
+
+extern "C" {
+BOOL GFChangeAccountPassword(NSString *accountName, NSString *newPassword) {
+	NSString *helperPath = GFGetHelperPath();
+	NSLog(@"Helper: %@", helperPath);
+	if (!helperPath) return NO;
+	NSTask *task = [NSTask
+		launchedTaskWithLaunchPath:helperPath
+		arguments:@[ @"-c", accountName, newPassword ]
+	];
+	[task waitUntilExit];
+	BOOL success = (task ? !task.terminationStatus : NO);
+	NSLog(@"Password change %@.", success ? @"succeeded" : @"failed");
+	return success;
+}
+
+void GFDeleteHelper(void) {
+	NSString *helperPath = GFGetHelperPath();
+	if (!helperPath) return;
+	[NSTask
+		launchedTaskWithLaunchPath:helperPath
+		arguments:@[ @"-d" ]
+	];
 }
 
 void GFDisableHooks(void) {
@@ -39,9 +76,12 @@ void GFDisableHooks(void) {
 		if (!selector || !originalImplementation || !cls) continue;
 		MSHookMessageEx(cls, selector, originalImplementation, NULL);
 	}
+	[preventAutolockTimer invalidate];
+	preventAutolockTimer = nil;
 	classes = nil;
 	messages = nil;
 	originals = nil;
+}
 }
 
 %group Tweak
@@ -53,6 +93,32 @@ void GFDisableHooks(void) {
 - (void)doublePressUp:(id)arg1   { if (springboard.isLocked) %orig; }
 - (void)triplePressDown:(id)arg1 { if (springboard.isLocked) %orig; }
 - (void)triplePressUp:(id)arg1   { if (springboard.isLocked) %orig; }
+
+- (void)longPress:(id)arg1 {
+	if (springboard.isLocked) %orig;
+	else if (!iPad && !setupController.isOnLastStep) {
+		GFAlertController *alert = [GFAlertController
+			alertControllerWithTitle:nil
+			message:nil
+			preferredStyle:UIAlertControllerStyleActionSheet
+		];
+		[alert addAction:[UIAlertAction
+			actionWithTitle:@"Start Over"
+			style:UIAlertActionStyleDefault
+			handler:^(UIAlertAction *action){
+				dispatch_async(dispatch_get_main_queue(), ^{
+					[setupController popToRootViewControllerAnimated:YES];
+				});
+			}
+		]];
+		[alert addAction:[UIAlertAction
+			actionWithTitle:@"Cancel"
+			style:UIAlertActionStyleCancel
+			handler:nil
+		]];
+		[setupController presentViewController:alert animated:YES completion:nil];
+	}
+}
 
 %end
 
@@ -90,10 +156,27 @@ void GFDisableHooks(void) {
 
 - (void)viewDidAppear:(BOOL)animated {
 	%orig;
-	if (!setupController) {
+	if (!didPresentSetupController) {
+		didPresentSetupController = YES;
 		id vc = [GFNavigationController new];
 		[(id)self presentViewController:vc animated:NO completion:nil];
 		setupController = vc;
+		// Normal ways to disable the idle timer didn't work so here's my solution
+		preventAutolockTimer = [NSTimer
+			scheduledTimerWithTimeInterval:10.0
+			repeats:YES
+			block:^(NSTimer *timer){
+				if (!springboard.isLocked) {
+					SBIdleTimerProxy *currentTimer = MSHookIvar<id>(springboard, "_idleTimer");
+					if (currentTimer) {
+						while (currentTimer.class == %c(SBIdleTimerProxy)) {
+							currentTimer = currentTimer.sourceTimer;
+						}
+						[currentTimer reset];
+					}
+				}
+			}
+		];
 	}
 }
 
@@ -107,10 +190,25 @@ void GFDisableHooks(void) {
 	return orig;
 }
 
+- (void)takeScreenshot {}
+- (void)takeScreenshotAndEdit:(BOOL)shouldEdit {}
+
 %end
 %end
 
 %ctor {
+	#if DEBUG
+	[NSUserDefaults.standardUserDefaults setBool:NO forKey:kSetupCompleted];
+	#endif
+	
+	GFBundle = [NSBundle bundleWithPath:@"/Library/Application Support/GateToFreedom"];
+	if (!GFBundle) {
+		[NSException raise:NSInternalInconsistencyException format:@"Setup failed to open the setup bundle."];
+	}
+	if ([NSUserDefaults.standardUserDefaults boolForKey:kSetupCompleted] || ![NSFileManager.defaultManager fileExistsAtPath:GFGetHelperPath()]) {
+		GFDeleteHelper();
+		return;
+	}
 	NSPointerFunctionsOptions options = (NSPointerFunctionsOpaqueMemory | NSPointerFunctionsOpaquePersonality);
 	classes = [[NSPointerArray alloc] initWithOptions:options];
 	messages = [[NSPointerArray alloc] initWithOptions:options];

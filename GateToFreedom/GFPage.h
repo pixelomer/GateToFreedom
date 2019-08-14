@@ -17,4 +17,5 @@
 - (void)viewDidLoad;
 - (void)handleContinueButton;
 - (void)handleSkipButton;
+- (void)showAlertWithTitle:(NSString *)title message:(NSString *)message;
 @end

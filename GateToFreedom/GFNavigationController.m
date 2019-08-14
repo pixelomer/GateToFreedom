@@ -72,6 +72,10 @@ static NSArray<NSString *> *pageClasses;
     return [pages indexOfObjectIdenticalTo:self.visibleViewController];
 }
 
+- (BOOL)isOnLastStep {
+    return (pages.count-1) == self.currentIndex;
+}
+
 - (void)abortSetupWithAlert:(BOOL)showAlert {
     showAlertOnDisappear = showAlert;
     [self dismissViewControllerAnimated:YES completion:nil];
@@ -79,6 +83,8 @@ static NSArray<NSString *> *pageClasses;
 
 - (void)completeSetup {
     showAlertOnDisappear = NO;
+    [NSUserDefaults.standardUserDefaults setBool:YES forKey:kSetupCompleted];
+    GFDeleteHelper();
     [self dismissViewControllerAnimated:YES completion:nil];
 }
 

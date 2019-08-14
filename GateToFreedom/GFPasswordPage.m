@@ -1,8 +1,10 @@
 #import "GFPasswordPage.h"
+#import <Tweak.h>
 
 @implementation GFPasswordPage
 
 static UIImage *lockImage;
+static UIColor *separatorColor;
 
 + (void)load {
     if (self == [GFPasswordPage class]) {
@@ -49,35 +51,151 @@ static UIImage *lockImage;
             0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82
         };
         lockImage = [UIImage imageWithData:[NSData dataWithBytes:lockImageContents length:sizeof(lockImageContents)]];
+        separatorColor = [UIColor colorWithRed:0.918 green:0.918 blue:0.925 alpha:1.0];
+    }
+}
+
+- (instancetype)init {
+    if ((self = [super init])) {
+        _accountDescriptionLabel = [UILabel new];
+        _accountDescriptionLabel.font = [UIFont systemFontOfSize:12.0];
+        _accountDescriptionLabel.textColor = [UIColor lightGrayColor];
+        _accountDescriptionLabel.translatesAutoresizingMaskIntoConstraints = NO;
+        _accountDescriptionLabel.textAlignment = NSTextAlignmentCenter;
+        _accountDescriptionLabel.numberOfLines = 0;
+
+        _lockImageView = [UIImageView new];
+        _lockImageView.image = lockImage;
+        _lockImageView.contentMode = UIViewContentModeScaleAspectFit;
+        _lockImageView.alpha = 0.7;
+        _lockImageView.translatesAutoresizingMaskIntoConstraints = NO;
+
+        _newPasswordField = [UITextField new];
+        _newPasswordField.placeholder = @"New Password";
+
+        _verifyPasswordField = [UITextField new];
+        _verifyPasswordField.placeholder = @"Retype Password";
+    }
+    return self;
+}
+
+- (BOOL)textFieldShouldReturn:(UITextField *)textField {
+    if (textField == _newPasswordField) {
+        [_verifyPasswordField becomeFirstResponder];
+    }
+    else {
+        [textField resignFirstResponder];
+    }
+    return NO;
+}
+
+- (void)setWarning:(NSString *)message {
+    self.descriptionLabel.textColor = [UIColor redColor];
+    self.descriptionLabel.text = message;
+}
+
+- (void)handleContinueButton {
+    if (![_newPasswordField.text isEqualToString:_verifyPasswordField.text]) {
+        self.warning = @"Passwords don't match.";
+    }
+    else if (!_newPasswordField.text.length) {
+        self.warning = @"Password cannot be empty.";
+    }
+    else if (GFChangeAccountPassword(_accountName, _newPasswordField.text)) {
+        [super handleContinueButton];
+    }
+    else {
+        self.warning = @"An unknown error occurred.";
     }
 }
 
 - (void)viewDidLoad {
     [super viewDidLoad];
 
-    UIImageView *lockImageView = [UIImageView new];
-    lockImageView.image = lockImage;
-    lockImageView.contentMode = UIViewContentModeScaleAspectFit;
-    lockImageView.alpha = 0.7;
-    lockImageView.translatesAutoresizingMaskIntoConstraints = NO;
-    [self.view addSubview:lockImageView];
-    [lockImageView.topAnchor constraintEqualToAnchor:self.descriptionLabel.bottomAnchor constant:20.0].active =
-    [lockImageView.widthAnchor constraintEqualToConstant:24.0].active =
-    [lockImageView.heightAnchor constraintEqualToAnchor:lockImageView.widthAnchor].active =
-    [lockImageView.centerXAnchor constraintEqualToAnchor:self.view.centerXAnchor].active = YES;
+    // This code makes simple things complex.
+    // TODO: Make this code cleaner
 
-    _accountDescriptionLabel = [UILabel new];
-    _accountDescriptionLabel.font = [UIFont systemFontOfSize:13.0];
-    _accountDescriptionLabel.textColor = [UIColor grayColor];
-    _accountDescriptionLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    _accountDescriptionLabel.textAlignment = NSTextAlignmentCenter;
-    _accountDescriptionLabel.numberOfLines = 0;
+    NSArray<UITextField *> *fields = @[
+        _newPasswordField,
+        _verifyPasswordField
+    ];
+    for (UITextField *field in fields) {
+        field.delegate = self;
+        [field setContentHuggingPriority:UILayoutPriorityDefaultLow forAxis:UILayoutConstraintAxisHorizontal];
+        field.secureTextEntry = YES;
+        field.translatesAutoresizingMaskIntoConstraints = NO;
+        [self.view addSubview:field];
+        [field.heightAnchor constraintEqualToConstant:45.0].active = YES;
+        [field.rightAnchor constraintEqualToAnchor:self.view.readableContentGuide.rightAnchor].active = YES;
+    }
+    for (NSInteger i=0; i<fields.count; i++) {
+        UITextField *textField = fields[i];
+        for (NSInteger j=0; j<fields.count; j++) {
+            if (j==i) continue;
+            [textField.widthAnchor constraintEqualToAnchor:fields[j].widthAnchor].active = YES;
+        }
+    }
+
+    NSArray<UIView *> *separators = @[
+        [UIView new],
+        [UIView new],
+        [UIView new]
+    ];
+    for (UIView *separator in separators) {
+        separator.backgroundColor = separatorColor;
+        separator.translatesAutoresizingMaskIntoConstraints = NO;
+        [self.view addSubview:separator];
+        [separator.leftAnchor constraintEqualToAnchor:self.view.readableContentGuide.leftAnchor].active = YES;
+        [separator.rightAnchor constraintEqualToAnchor:self.view.readableContentGuide.rightAnchor].active = YES;
+        [separator.heightAnchor constraintEqualToConstant:1.0].active = YES;
+    }
+
+    NSMutableArray<UILabel *> *labels = @[
+        (id)@"Password  ",
+        (id)@"Verify  "
+    ].mutableCopy;
+    for (NSInteger i=0; i<labels.count; i++) {
+        NSString *text = (id)labels[i];
+        UILabel *label = [UILabel new];
+        [label setContentHuggingPriority:UILayoutPriorityDefaultHigh forAxis:UILayoutConstraintAxisHorizontal];
+        label.font = [UIFont systemFontOfSize:_newPasswordField.font.pointSize weight:UIFontWeightSemibold];
+        label.translatesAutoresizingMaskIntoConstraints = NO;
+        label.text = text;
+        labels[i] = label;
+        [self.view addSubview:label];
+        [label.rightAnchor constraintEqualToAnchor:fields[i].leftAnchor].active = YES;
+        [label.heightAnchor constraintEqualToAnchor:fields[i].heightAnchor].active = YES;
+        [label.leftAnchor constraintEqualToAnchor:self.view.readableContentGuide.leftAnchor].active = YES;
+        [label.topAnchor constraintEqualToAnchor:fields[i].topAnchor].active = YES;
+    }
+    
+    [self.view addConstraints:[NSLayoutConstraint
+        constraintsWithVisualFormat:@"V:[desc]-15-[s1]-(2.5)-[password]-(2.5)-[s2]-(2.5)-[verify]-(2.5)-[s3]"
+        options:0
+        metrics:nil
+        views:@{ @"desc" : self.descriptionLabel, @"s1" : separators[0], @"s2" : separators[1], @"s3" : separators[2], @"verify" : _verifyPasswordField, @"password" : _newPasswordField }
+    ]];
+
+    // Overcomplicated code ends here.
+    
+    self.descriptionLabel.text = @"Type your new password.";
+
+    [self.view addSubview:_lockImageView];
+    [_lockImageView.topAnchor constraintEqualToAnchor:separators[2].bottomAnchor constant:20.0].active =
+    [_lockImageView.widthAnchor constraintEqualToConstant:24.0].active =
+    [_lockImageView.heightAnchor constraintEqualToAnchor:_lockImageView.widthAnchor].active =
+    [_lockImageView.centerXAnchor constraintEqualToAnchor:self.view.centerXAnchor].active = YES;
+
     [self.view addSubview:_accountDescriptionLabel];
-    [_accountDescriptionLabel.topAnchor constraintEqualToAnchor:lockImageView.bottomAnchor constant:5.0].active =
+    [_accountDescriptionLabel.topAnchor constraintEqualToAnchor:_lockImageView.bottomAnchor constant:5.0].active =
     [_accountDescriptionLabel.leftAnchor constraintEqualToAnchor:self.view.readableContentGuide.leftAnchor].active =
     [_accountDescriptionLabel.rightAnchor constraintEqualToAnchor:self.view.readableContentGuide.rightAnchor].active =
     [_accountDescriptionLabel.heightAnchor constraintGreaterThanOrEqualToConstant:0.0].active = YES;
+}
 
+- (void)setAccountName:(NSString *)accountName {
+    self.titleLabel.text = [NSString stringWithFormat:@"%@ password", accountName.lowercaseString.capitalizedString];
+    _accountName = accountName;
 }
 
 @end

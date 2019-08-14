@@ -17,7 +17,7 @@ static UIImage *headerIcon;
     [super viewDidLoad];
     self.headerIconView.image = headerIcon;
     self.titleLabel.text = @"Keep Your Device Secure";
-    self.descriptionLabel.text = @"Normally, every iOS device uses the same passwords for system accounts. People can remotely connect to your device with these passwords, so the setup will help you change them.";
+    self.descriptionLabel.text = @"Normally, every iOS device uses the same passwords for system accounts. People can remotely connect to your device with these passwords. The setup will help you change them.";
     self.showsSkipButton = YES;
     [self.skipButton setTitle:@"Change Later" forState:UIControlStateNormal];
 }
@@ -25,7 +25,7 @@ static UIImage *headerIcon;
 - (void)handleSkipButton {
     GFAlertController *alert = [GFAlertController
         alertControllerWithTitle:@"Are you sure?"
-        message:@"Skipping this step will leave your device insecure. Anyone who is on the same network as you will be able to access your phone using SSH."
+        message:@"Skipping this step will leave your device insecure. Anyone who is on the same network as you will be able to access your device."
         preferredStyle:UIAlertControllerStyleAlert
     ];
     [alert addAction:[UIAlertAction

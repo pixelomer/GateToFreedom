@@ -1,6 +1,7 @@
 #import "GFPage.h"
 #import "GFContinueButton.h"
 #import "GFNavigationController.h"
+#import <Tweak.h>
 
 @implementation GFPage
 
@@ -102,6 +103,20 @@
         self.navigationItem.rightBarButtonItem = _nextButton;
     }
     _showsContinueButton = shouldShow;
+}
+
+- (void)showAlertWithTitle:(NSString *)title message:(NSString *)message {
+    GFAlertController *alert = [GFAlertController
+        alertControllerWithTitle:title
+        message:message
+        preferredStyle:UIAlertControllerStyleAlert
+    ];
+    [alert addAction:[UIAlertAction
+        actionWithTitle:@"OK"
+        style:UIAlertActionStyleCancel
+        handler:nil
+    ]];
+    [self presentViewController:alert animated:YES completion:nil];
 }
 
 - (void)setShowsSkipButton:(BOOL)shouldShow {

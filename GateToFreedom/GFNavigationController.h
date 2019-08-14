@@ -6,6 +6,7 @@
 }
 - (instancetype)init;
 - (void)pushNextPage;
+- (BOOL)isOnLastStep;
 - (void)completeSetup;
 - (void)skipToNextSection;
 - (void)abortSetupWithAlert:(BOOL)showAlert;
