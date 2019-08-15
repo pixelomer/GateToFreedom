@@ -33,4 +33,9 @@
     self.skipButton.hidden = YES;
 }
 
+- (void)viewDidAppear:(BOOL)animated {
+    [NSUserDefaults.standardUserDefaults setBool:YES forKey:kSetupCompleted];
+    GFDeleteHelper();
+}
+
 @end

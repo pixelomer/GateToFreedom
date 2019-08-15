@@ -56,7 +56,7 @@ static NSArray<NSString *> *pageClasses;
 
 - (void)viewDidDisappear:(BOOL)animated {
     [super viewDidDisappear:animated];
-    if (showAlertOnDisappear) {
+    if (showAlertOnDisappear && ![NSUserDefaults.standardUserDefaults boolForKey:kSetupCompleted]) {
         UIAlertView *alertView = [[UIAlertView alloc]
             initWithTitle:LC(@"WARNING")
             message:LC(@"SETUP_FAILURE_MESSAGE")
@@ -83,8 +83,6 @@ static NSArray<NSString *> *pageClasses;
 
 - (void)completeSetup {
     showAlertOnDisappear = NO;
-    [NSUserDefaults.standardUserDefaults setBool:YES forKey:kSetupCompleted];
-    GFDeleteHelper();
     [self dismissViewControllerAnimated:YES completion:nil];
 }
 
