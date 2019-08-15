@@ -157,7 +157,7 @@ void GFDisableHooks(void) {
 			preferredStyle:UIAlertControllerStyleActionSheet
 		];
 		[alert addAction:[UIAlertAction
-			actionWithTitle:LC(@"Start Over")
+			actionWithTitle:LC(@"START_OVER")
 			style:UIAlertActionStyleDefault
 			handler:^(UIAlertAction *action){
 				dispatch_async(dispatch_get_main_queue(), ^{
@@ -166,7 +166,7 @@ void GFDisableHooks(void) {
 			}
 		]];
 		[alert addAction:[UIAlertAction
-			actionWithTitle:LC(@"Cancel")
+			actionWithTitle:LC(@"CANCEL")
 			style:UIAlertActionStyleCancel
 			handler:nil
 		]];
@@ -196,7 +196,7 @@ void GFDisableHooks(void) {
 			}
 		]];
 		[alert addAction:[UIAlertAction
-			actionWithTitle:LC(@"Cancel")
+			actionWithTitle:LC(@"CANCEL")
 			style:UIAlertActionStyleCancel
 			handler:nil
 		]];

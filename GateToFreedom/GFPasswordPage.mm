@@ -193,6 +193,9 @@ static NSString *initialDescription;
 
     // Overcomplicated code ends here.
 
+    self.descriptionLabel.numberOfLines = 1;
+    self.descriptionLabel.adjustsFontSizeToFitWidth = YES;
+
     [self.view addSubview:_lockImageView];
     [_lockImageView.topAnchor constraintEqualToAnchor:separators[2].bottomAnchor constant:20.0].active =
     [_lockImageView.widthAnchor constraintEqualToConstant:24.0].active =
