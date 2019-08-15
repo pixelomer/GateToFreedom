@@ -120,6 +120,7 @@ static NSString *initialDescription;
         [super handleContinueButton];
     }
     else {
+        NSLog(@"Error: %@", error);
         self.warning = error.localizedDescription;
     }
 }

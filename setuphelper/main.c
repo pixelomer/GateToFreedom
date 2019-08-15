@@ -1,7 +1,6 @@
 // You might be wondering: "Why is this written in C instead of Objective-C?"
 // I don't really have a logical answer. I just wanted to write it like this.
 
-#define _GNU_SOURCE
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
@@ -38,7 +37,7 @@ int main(int argc, char **argv) {
 		if (argc <= 2) return ERROR_INVALID_ARGS;
 
 		// Get the new password.
-		char *new_pass;
+		char *new_pass = NULL;
 		{
 			size_t buffer_size = 0;
 			if ((getline(&new_pass, &buffer_size, stdin) == -1) || !new_pass || !strlen(new_pass)) {
@@ -111,7 +110,8 @@ int main(int argc, char **argv) {
 		long length_difference;
 		{
 			char *tmp = unmodified_line+prefix_len+old_hash_len;
-			asprintf(&new_user_line, "%s%s%s", prefix, new_hash, tmp);
+			new_user_line = malloc(strlen(prefix) + strlen(new_hash) + strlen(tmp) + 1);
+			sprintf(new_user_line, "%s%s%s", prefix, new_hash, tmp);
 			length_difference = strlen(new_user_line) - strlen(unmodified_line);
 		}
 
