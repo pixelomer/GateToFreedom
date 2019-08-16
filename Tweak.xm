@@ -10,6 +10,9 @@
 - (UIGestureRecognizer *)screenshotGestureRecognizer;
 @end
 
+@interface NCNotificationListCollectionView : UICollectionView
+@end
+
 @interface SBIdleTimerProxy : NSObject
 - (void)reset;
 - (id)sourceTimer;
@@ -234,6 +237,12 @@ void GFDisableHooks(void) {
 	}
 }
 
+%end
+
+%hook SBSwitcherForcePressSystemGestureRecognizer
+- (void)touchesBegan:(id)arg1 withEvent:(id)arg2 {}
+- (void)touchesEnded:(id)arg1 withEvent:(id)arg2 {}
+- (void)touchesMoved:(id)arg1 withEvent:(id)arg2 {}
 %end
 
 %hook SpringBoard
